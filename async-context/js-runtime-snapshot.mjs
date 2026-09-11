@@ -1,5 +1,11 @@
 #!/usr/bin/env node
-const sourceRoot = new URL(`file://${process.argv[2] ?? 'source'}/`).href;
+const runtimeArguments = globalThis.Deno?.args ?? process.argv.slice(2);
+const sourceArgument = runtimeArguments[0] ?? 'source';
+const sourceRoot = new URL(
+  sourceArgument.startsWith('/')
+    ? `file://${sourceArgument.replace(/\/$/, '')}/`
+    : `file://${sourceArgument.replace(/\/$/, '')}/`,
+).href;
 const contextUrl = new URL('dist/context.js', sourceRoot).href;
 const executionUrl = new URL('dist/execution-context.js', sourceRoot).href;
 const {
