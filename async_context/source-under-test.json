@@ -1,0 +1,17 @@
+{
+  "schema": "ores-otel-test/async-context-security-candidate/v1",
+  "repository": "ores-otel/ores.otel.log",
+  "ref": "hardening/async-context-fiber-snapshots-20260911",
+  "baseline_sha": "0109ec4972864d666174f759d87239c8385ba496",
+  "purpose": "Pre-merge adversarial certification of recursive snapshot ownership, cancellation cleanup, fiber isolation, thread reuse, and cross-tenant non-leakage",
+  "required_languages": ["typescript", "python", "go", "java", "ruby"],
+  "required_boundaries": [
+    "mutation-after-capture",
+    "nested mutable values",
+    "sibling concurrency",
+    "cancellation and exception cleanup",
+    "thread and fiber reuse",
+    "cross-tenant request reuse",
+    "explicit carrier handoff"
+  ]
+}
