@@ -1,0 +1,51 @@
+{
+  "schema": "ores-otel-test/async-context-security-matrix/v2",
+  "repository": "ores-otel/ores.otel.log",
+  "sha": "SOURCE_SHA_TO_UPDATE_AFTER_HARDENING",
+  "middlewareRepository": "ORESoftware/ores-middleware",
+  "middlewareSha": "c786e6172ebd73bb90a40bada84404837a1c0c60",
+  "requiredLanguages": [
+    "typescript",
+    "python",
+    "go",
+    "rust",
+    "java",
+    "ruby",
+    "dart",
+    "gleam",
+    "erlang",
+    "elixir"
+  ],
+  "requiredRuntimeFamilies": [
+    "node",
+    "bun",
+    "deno",
+    "browser",
+    "workerd",
+    "cpython",
+    "pypy",
+    "go",
+    "rust",
+    "jvm",
+    "ruby-mri",
+    "jruby",
+    "truffleruby",
+    "dart-vm",
+    "flutter",
+    "beam",
+    "wasm"
+  ],
+  "requiredThreats": [
+    "cross-request identity leakage",
+    "post-capture nested mutation",
+    "reader mutation of a returned snapshot",
+    "cancellation cleanup",
+    "worker-thread reuse",
+    "executor-thread reuse",
+    "fiber reuse",
+    "process and isolate boundary confusion",
+    "captured absence masking",
+    "explicit zero trace flags",
+    "unsupported ambient propagation claims"
+  ]
+}
