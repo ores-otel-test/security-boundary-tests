@@ -1,0 +1,62 @@
+name: Async-context multi-ALS composition
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/async-context-dual-als.yml'
+      - 'async_context/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/async-context-dual-als.yml'
+      - 'async_context/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: async-context-dual-als-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_REPOSITORY: ores-otel/ores.otel.log
+  SOURCE_REF: hardening/async-context-fiber-snapshots-20260911
+
+jobs:
+  composition:
+    name: Logger, tracing, and auth AsyncLocalStorage composition
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: harness
+          persist-credentials: false
+      - id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha=$(git ls-remote "https://github.com/${SOURCE_REPOSITORY}.git" "refs/heads/${SOURCE_REF}" | awk 'NR == 1 {print $1}')
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ steps.resolve.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22.20.0'
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+      - working-directory: source
+        run: |
+          npm ci
+          npm run build
+      - name: Run 256 three-store composition schedules
+        env:
+          SOURCE_ROOT: ${{ github.workspace }}/source
+        run: node harness/async_context/node_dual_als_composition.mjs
