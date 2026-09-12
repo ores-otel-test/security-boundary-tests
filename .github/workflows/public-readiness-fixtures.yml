@@ -1,0 +1,58 @@
+name: public-readiness-fixtures
+
+on:
+  push:
+    branches:
+      - DEN-3828-public-readiness-lint-fixtures
+  pull_request:
+    paths:
+      - tests/public-readiness-fixtures.sh
+      - .github/workflows/public-readiness-fixtures.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact fixture source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Validate generator syntax
+        run: bash -n tests/public-readiness-fixtures.sh
+
+      - name: Generate fixture repositories
+        run: bash tests/public-readiness-fixtures.sh "$RUNNER_TEMP/readiness-fixtures"
+
+      - name: Verify cross-runtime fixture contract
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/readiness-fixtures"
+          for fixture in \
+            pass-rust-maud \
+            pass-negated-copy \
+            fail-invalid-substantiation \
+            fail-guaranteed-clean
+          do
+            test -f "$root/$fixture/README.md"
+            test -f "$root/$fixture/LICENSE"
+            test -f "$root/$fixture/AGENTS.md"
+            test -f "$root/$fixture/.github/README.md"
+          done
+          test -f "$root/pass-rust-maud/src/routes/training.rs"
+          grep -F 'Readiness is not assurance' "$root/pass-rust-maud/src/routes/training.rs"
+          grep -F 'does not offer guaranteed compliance or SOC 2 certified status' "$root/pass-negated-copy/public/readiness.html"
+          grep -F 'ores-claim-substantiation: ../outside.md' "$root/fail-invalid-substantiation/public/training.html"
+          grep -F '40% faster' "$root/fail-invalid-substantiation/public/training.html"
+          grep -F 'Guaranteed clean audit outcome' "$root/fail-guaranteed-clean/public/readiness.html"
+
+      - name: Prove generator is source-clean
+        run: |
+          set -euo pipefail
+          git diff --exit-code HEAD
+          test -z "$(git status --porcelain)"
