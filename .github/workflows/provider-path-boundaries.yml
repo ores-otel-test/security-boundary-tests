@@ -1,0 +1,43 @@
+name: provider path boundary acceptance
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provider-paths:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: "22.22.1"
+      - name: Prove provider config stays inside canonical modules roots
+        shell: bash
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const allowedRoots = ['modules/cloudflare/', 'modules/supabase/', 'modules/neon/'];
+          const admit = value => {
+            const path = String(value);
+            if (!path || path.startsWith('/') || path.includes('..') || path.includes('\\')) return false;
+            if (/^(?:\.env|terraform\.tfstate)(?:$|\.)/.test(path)) return false;
+            return allowedRoots.some(root => path.startsWith(root));
+          };
+
+          assert.equal(admit('modules/cloudflare/api/wrangler.jsonc'), true);
+          assert.equal(admit('modules/supabase/config.toml'), true);
+          assert.equal(admit('modules/neon/neon.ts'), true);
+          assert.equal(admit('cloudflare/wrangler.jsonc'), false, 'root-level duplicate authority is rejected');
+          assert.equal(admit('modules/cloudflare/../../.env'), false);
+          assert.equal(admit('/modules/neon/neon.ts'), false);
+          assert.equal(admit('modules\\supabase\\config.toml'), false);
+          assert.equal(admit('.env.production'), false);
+          assert.equal(admit('terraform.tfstate.backup'), false);
+          NODE
